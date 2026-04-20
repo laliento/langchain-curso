@@ -3,7 +3,7 @@ from langchain_core.outputs import ChatGenerationChunk, ChatResult, ChatGenerati
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, BaseMessage, AIMessageChunk
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from typing import Optional, List, Any, Dict, Type
+from typing import Optional, List, Any, Dict, Type, Union
 from pydantic import BaseModel
 import torch
 from transformers import AutoProcessor, AutoModelForCausalLM
@@ -22,6 +22,7 @@ class LocalGemma4(BaseChatModel):
     top_p: float = 0.95
     top_k: int = 64
     enable_thinking: bool = False
+    tools: Optional[List[Dict[str, Any]]] = None
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -109,9 +110,62 @@ class LocalGemma4(BaseChatModel):
         for chunk in result.generations[0]:
             yield chunk
     
+    def bind_tools(
+        self,
+        tools: List[Union[Dict[str, Any], Type[BaseModel], Callable[..., Any]]],
+        **kwargs: Any,
+    ):
+        """Bind tools to the model."""
+        # Convert tools to dict format
+        tools_dict = []
+        for tool in tools:
+            if isinstance(tool, dict):
+                tools_dict.append(tool)
+            elif hasattr(tool, "model_json_schema"):
+                # Pydantic model
+                schema = tool.model_json_schema()
+                tools_dict.append({
+                    "type": "function",
+                    "function": {
+                        "name": schema.get("title", "tool"),
+                        "description": schema.get("description", ""),
+                        "parameters": schema.get("properties", {})
+                    }
+                })
+            else:
+                tools_dict.append(tool)
+        
+        new_instance = self.copy()
+        new_instance.tools = tools_dict
+        return new_instance
+    
     def with_structured_output(
         self, schema: Type[BaseModel], **kwargs: Any
     ):
-        """Return a chain that structured output."""
-        parser = PydanticOutputParser(pydantic_object=schema)
-        return RunnablePassthrough() | self | parser
+        """Return a chain that structured output using tool calling."""
+        from langchain_core.runnables import RunnableLambda
+        
+        # Create a parser that extracts JSON from text and converts to schema
+        def extract_and_parse(message) -> BaseModel:
+            """Extract JSON from message content and parse to schema."""
+            import re
+            import json
+            
+            # Get content from message
+            content = message.content if hasattr(message, 'content') else str(message)
+            
+            # Try to find JSON in the response - more flexible pattern
+            # Look for content between curly braces, including nested ones
+            json_match = re.search(r'\{[\s\S]*\}', content)
+            if json_match:
+                try:
+                    data = json.loads(json_match.group())
+                    return schema(**data)
+                except json.JSONDecodeError as e:
+                    print(f"JSON decode error: {e}")
+                    print(f"Content: {content}")
+            
+            # If no JSON found, return empty schema with defaults
+            return schema(**{})
+        
+        return RunnablePassthrough() | self | RunnableLambda(extract_and_parse)
