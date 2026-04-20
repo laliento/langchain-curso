@@ -30,11 +30,17 @@ class LocalGemma4(BaseChatModel):
     
     def _load_model(self):
         """Load the model from local path."""
-        self.processor = AutoProcessor.from_pretrained(self.model_path)
+        from pathlib import Path
+        
+        # Convert to absolute path
+        model_path = Path(self.model_path).resolve()
+        
+        self.processor = AutoProcessor.from_pretrained(model_path, local_files_only=True)
         self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_path,
+            model_path,
             dtype=self.dtype,
-            device_map=self.device
+            device_map=self.device,
+            local_files_only=True
         )
         self.model.eval()
     
@@ -80,8 +86,6 @@ class LocalGemma4(BaseChatModel):
                 **inputs,
                 max_new_tokens=self.max_new_tokens,
                 temperature=self.temperature,
-                top_p=self.top_p,
-                top_k=self.top_k,
             )
         
         response = self.processor.decode(
