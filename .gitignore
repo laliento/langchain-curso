@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# models
+*.safetensors
+
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+*.spec
+
+# Unit test / coverage reports
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+nosetests.xml
+coverage.xml
+
+# Local Environment Variables & Secrets
+.env
+.envrc
+
+# IDE/Editor specific
+.vscode/
+.idea/
+*.swp
