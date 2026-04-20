@@ -1,5 +1,6 @@
-from langchain_core.language_models import BaseLLM
-from langchain_core.outputs import GenerationChunk, LLMResult
+from langchain_core.language_models import BaseChatModel
+from langchain_core.outputs import ChatGenerationChunk, ChatResult, ChatGeneration
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, BaseMessage, AIMessageChunk
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from typing import Optional, List, Any, Dict, Type
@@ -8,8 +9,8 @@ import torch
 from transformers import AutoProcessor, AutoModelForCausalLM
 
 
-class LocalGemma4(BaseLLM):
-    """Custom LangChain LLM wrapper for local Gemma 4 model."""
+class LocalGemma4(BaseChatModel):
+    """Custom LangChain ChatModel wrapper for local Gemma 4 model."""
     
     model_path: str
     model: Any = None
@@ -38,29 +39,42 @@ class LocalGemma4(BaseLLM):
     
     def _generate(
         self,
-        prompts: List[str],
+        messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> LLMResult:
-        """Generate responses for a list of prompts."""
+    ) -> ChatResult:
+        """Generate responses for a list of messages."""
         generations = []
         
-        for prompt in prompts:
-            messages = [
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt},
-            ]
-            
-            text = self.processor.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True,
-                enable_thinking=self.enable_thinking
+        # Convert messages to dict format
+        messages_dict = []
+        for msg in messages:
+            if isinstance(msg, HumanMessage):
+                messages_dict.append({"role": "user", "content": msg.content})
+            elif isinstance(msg, AIMessage):
+                messages_dict.append({"role": "assistant", "content": msg.content})
+            elif isinstance(msg, SystemMessage):
+                messages_dict.append({"role": "system", "content": msg.content})
+        
+        # Apply chat template
+        text = self.processor.apply_chat_template(
+            messages_dict,
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=self.enable_thinking
+        )
+        
+        inputs = self.processor(text=text, return_tensors="pt").to(self.model.device)
+        input_len = inputs["input_ids"].shape[-1]
+        
+        # Handle temperature=0 for greedy decoding
+        if self.temperature == 0:
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=self.max_new_tokens,
+                do_sample=False
             )
-            
-            inputs = self.processor(text=text, return_tensors="pt").to(self.model.device)
-            input_len = inputs["input_ids"].shape[-1]
-            
+        else:
             outputs = self.model.generate(
                 **inputs,
                 max_new_tokens=self.max_new_tokens,
@@ -68,30 +82,32 @@ class LocalGemma4(BaseLLM):
                 top_p=self.top_p,
                 top_k=self.top_k,
             )
-            
-            response = self.processor.decode(
-                outputs[0][input_len:],
-                skip_special_tokens=True
-            )
-            
-            generations.append([GenerationChunk(text=response)])
         
-        return LLMResult(generations=generations)
+        response = self.processor.decode(
+            outputs[0][input_len:],
+            skip_special_tokens=True
+        )
+        
+        ai_message = AIMessage(content=response)
+        generations.append(ChatGeneration(message=ai_message))
+        
+        return ChatResult(generations=generations)
     
     @property
     def _llm_type(self) -> str:
         return "local-gemma-4"
     
-    def _call(
+    def _stream(
         self,
-        prompt: str,
+        messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager=None,
         **kwargs: Any,
-    ) -> str:
-        """Call the LLM with a single prompt."""
-        result = self._generate([prompt], stop=stop, **kwargs)
-        return result.generations[0][0].text
+    ):
+        """Stream responses for messages."""
+        # For simplicity, generate full response and yield it as a single chunk
+        result = self._generate([messages], stop=stop, **kwargs)
+        for chunk in result.generations[0]:
+            yield chunk
     
     def with_structured_output(
         self, schema: Type[BaseModel], **kwargs: Any
