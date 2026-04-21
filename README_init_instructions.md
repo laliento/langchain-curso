@@ -32,6 +32,15 @@ pip install pillow transformers torch accelerate langchain-core torchvision libr
 pip install chromadb langchain_chroma langchain_huggingface sentence-transformers 
 pip install langchain-classic
 
+##Procesamiento de audio/video local
+pip install openai-whisper transformers torch accelerate
+# Herramientas de sistema para el selector de archivos
+# (tkinter suele venir con Python, pero por si acaso)
+pip install tk
+download ffmpeg-git-full.7z from
+    https://www.gyan.dev/ffmpeg/builds/
+    add to path bin folder
+
 
 ###ejecutar chatBot_local.py con streamlit
 c:/Users/laptop/git/langchain-curso/venv/Scripts/python.exe -m streamlit run chatBot_local.py

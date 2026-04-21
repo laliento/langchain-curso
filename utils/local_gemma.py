@@ -7,6 +7,8 @@ from typing import Optional, List, Any, Dict, Type, Union
 from pydantic import BaseModel
 import torch
 from transformers import AutoProcessor, AutoModelForCausalLM
+import os
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 
 
 class LocalGemma4(BaseChatModel):

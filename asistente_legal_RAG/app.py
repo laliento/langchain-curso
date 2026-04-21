@@ -1,6 +1,3 @@
-import os
-os.environ["TRANSFORMERS_VERBOSITY"] = "error"
-
 import streamlit as st
 from rag_system import query_rag, get_retriever_info
 
