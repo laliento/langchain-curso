@@ -27,12 +27,20 @@ https://huggingface.co/google/gemma-4-E2B-it
 pip install -U transformers torch accelerate
 ###para correr en local:
 pip install pillow transformers torch accelerate langchain-core torchvision librosa streamlit PyPDF2 langchain-community pypdf beautifulsoup4
-##BD vectorial
-pip install chromadb langchain_chroma langchain_huggingface sentence-transformers
+
+##BD vectorial local with all-MiniLM-L6-v
+pip install chromadb langchain_chroma langchain_huggingface sentence-transformers 
+pip install langchain-classic
 
 
 ###ejecutar chatBot_local.py con streamlit
 c:/Users/laptop/git/langchain-curso/venv/Scripts/python.exe -m streamlit run chatBot_local.py
 
-###ejecutar chatBot_local.py con streamlit
+###ejecutar cv_analyzer con streamlit
 c:/Users/laptop/git/langchain-curso/venv/Scripts/python.exe -m streamlit run cv_analyzer/app.py
+
+
+###ejecutar asistente_legal_RAG con streamlit
+c:/Users/laptop/git/langchain-curso/venv/Scripts/python.exe -m streamlit run asistente_legal_RAG/app.py
+Ej:
+Que personas participan en los contratos de arrendamiento de locales comerciales?
