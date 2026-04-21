@@ -27,6 +27,8 @@ https://huggingface.co/google/gemma-4-E2B-it
 pip install -U transformers torch accelerate
 ###para correr en local:
 pip install pillow transformers torch accelerate langchain-core torchvision librosa streamlit PyPDF2 langchain-community pypdf beautifulsoup4
+##BD vectorial
+pip install chromadb langchain_chroma langchain_huggingface sentence-transformers
 
 
 ###ejecutar chatBot_local.py con streamlit
