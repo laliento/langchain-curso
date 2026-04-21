@@ -100,7 +100,14 @@ if __name__ == "__main__":
 
         # Ejecución del Grafo
         final_result = app.invoke({"notes": notes, "logs": []})
-        
+        print("\n--- participants DE LA REUNIÓN ---")
+        print(final_result["participants"])
+        print("\n--- topics DE LA REUNIÓN ---")
+        print(final_result["topics"])
+        print("\n--- action_items DE LA REUNIÓN ---")
+        print(final_result["action_items"])
+        print("\n--- minutes DE LA REUNIÓN ---")
+        print(final_result["minutes"])
         print("\n--- RESUMEN DE LA REUNIÓN ---")
         print(final_result["summary"])
         print("\nLogs del proceso:", final_result["logs"])
