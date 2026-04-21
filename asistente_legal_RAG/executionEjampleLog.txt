@@ -1,0 +1,95 @@
+Loading weights: 100%|████████████████████████████████| 1951/1951 [00:00<00:00, 4247.50it/s]
+🎬 Procesando audio de Simulacion_reunion.mp4...
+🎙️ Cargando Whisper Local...
+Loading weights: 100%|██████████████████████████████████| 479/479 [00:00<00:00, 4486.90it/s]
+⌛ Transcribiendo (esto puede tardar según la duración)...
+✓ Transcripción completada con éxito.
+
+--- participants DE LA REUNIÓN ---
+['Sergio', 'Ezequiel Pinedo', 'Nayeli Vanda', 'Luz Santo', 'Flor Rosales']
+
+--- topics DE LA REUNIÓN ---
+['Aquí tienes los 3-5 temas principales identificados del texto, separados por punto y coma:\n\n1. **Cambios y Adaptación Empresarial:** La necesidad de los ejecutivos de no temer a los cambios y la adaptación de la empresa a las nuevas condiciones del mercado (post-pandemia).\n2. **Optimización de la Producción y Cadena de Suministro:** Mejoras en la producción (adquisición de nuevos equipos para conservas) y la gestión de la cadena de suministros (seguimiento de compras y proveedores a través de plataformas como SAP).\n3. **Estrategias de Marketing y Ventas:** Propuestas para aumentar las ventas, enfocadas en producto (calidad), precio (competitividad y rentabilidad), plaza (ubicación de productos) y promoción (uso de redes sociales).\n4. **Inversión en Infraestructura y Recursos Humanos:** Solicitudes para la ampliación de almacenes y la capacitación/estructuración del equipo de producción mediante la delegación de funciones.\n5. **Evaluación y Compromiso con el Cambio:** El énfasis en que las propuestas presentadas son promesas que serán evaluadas continuamente, y la confianza depositada en el nuevo equipo para el crecimiento futuro de la empresa.']
+
+--- action_items DE LA REUNIÓN ---
+['Aquí tienes la extracción de acciones (Acción', 'Responsable) del texto proporcionado:', 'Acción', 'Responsable', '---', '---', 'Convocar a la reunión de gerencia', 'Sergio (Gerente General)', 'Explicar el trabajo de la empresa', 'Sergio (Gerente General)', 'Presentar a los ejecutivos convocados', 'Sergio (Gerente General)', 'Atender todas las demandas dentro de la producción para canalizar las ventas eficientemente', 'Ezequiel Pinedo (Supervisor de Producción)', 'Armar un equipo altamente capacitado (mano de obra, analistas, visitadores)', 'Ezequiel Pinedo (Supervisor de Producción) y Gerencia de Recursos Humanos', 'Trabajar continuamente con el área de almacén para recepción de productos y flujo a plantas de distribución', 'Ezequiel Pinedo (Supervisor de Producción) y Área de Almacén', 'Apuntar a la eficiencia y ganancias de la empresa', 'Ezequiel Pinedo (Supervisor de Producción)', 'Elaborar objetivos/estrategias para los próximos años', 'Equipo (Implícito, mencionado por Lucy Santo)', 'Implementar estrategias para aumentar las ventas (Plaza, Promoción, Producto, Precio)', 'Nayeli Vanda (Gerente de Marketing)', 'Implementar encuentros de venta', 'Nayeli Vanda (Gerente de Marketing)', 'Implementar medios para informar sobre productos', 'Nayeli Vanda (Gerente de Marketing)', 'Asegurar que el precio sea accesible y competitivo', 'Nayeli Vanda (Gerente de Marketing)', 'Analizar la adquisición de nuevos equipos/maquinarias para producción de conservas', 'Ezequiel Pinedo (Supervisor de Producción) y Área de Compras', 'Canalizar la adquisición de nuevos equipos', 'Área de Compras', 'Solicitar la ampliación de nuevos almacenes para materias primas', 'Ezequiel Pinedo (Supervisor de Producción)', 'Considerar un nuevo proveedor para el año 2023', 'Equipo (Implícito, mencionado por Luz Santo)', 'Asegurar que las producciones/pedidos sean entregados en menos tiempo (con nuevo proveedor)', 'Equipo (Implícito)', 'Asegurar que el producto sea de calidad que satisfaga al público objetivo', 'Nayeli Vanda (Gerente de Marketing)', 'Asegurar que el precio sea accesible y competitivo, generando rentabilidad', 'Nayeli Vanda (Gerente de Marketing)', 'Ubicar puntos donde los clientes puedan encontrar fácilmente los productos', 'Nayeli Vanda (Gerente de Marketing)', 'Manejar bien las redes sociales para informar sobre beneficios y productos', 'Nayeli Vanda (Gerente de Marketing)', 'Formar un equipo delegando funciones específicas', 'Flor Rosales (Exagerante de la cadena de suministros)', 'Adquirir equipos tecnológicos para mejorar la producción', 'Flor Rosales (Exagerante de la cadena de suministros)', 'Mejorar el almacenamiento de materias primas', 'Flor Rosales (Exagerante de la cadena de suministros)', 'Revisar continuamente las mediciones de las propuestas', 'Todos (Implícito, mencionado por Sergio)', 'Evaluar a los participantes según las promesas hechas', 'Sergio (Gerente General)']
+
+--- minutes DE LA REUNIÓN ---
+## Minuta de Reunión de Gerencia
+
+**Empresa:** Pesquera Diamante
+
+**Fecha:** [Insertar Fecha de la Reunión]
+
+**Asunto:** Reunión de Gerencia para abordar cambios y proponer estrategias futuras.
+
+**Asistentes:**
+
+* **Sergio:** Gerente General
+* **Ezequiel Pinedo:** Supervisor de Producción
+* **Nayeli Vanda:** Gerente de Marketing
+* **Luz Santo:** Gerente de Ventas
+* **Flor Rosales:** Experta en Cadena de Suministros
+
+---
+
+**1. Bienvenida e Introducción (Sergio - Gerente General)**
+
+* **Contexto:** Sergio, Gerente General de Pesquera Diamante, dio la bienvenida a todos los convocados, enfatizando la importancia de la reunión debido a los cambios que se avecinan en la empresa.
+* **Bienvenida a Nuevos Ingresos:** Se ofreció una breve explicación sobre el giro del negocio (procesamiento de harina y aceite de pescado, conservas, productos pesqueros y congelados).
+* **Mensaje Central:** Se instó a los ejecutivos a no temer a los cambios y a estar preparados para enfrentarlos.
+
+**2. Presentación del Área de Producción (Ezequiel Pinedo - Supervisor de Producción)**
+
+* **Objetivo Principal:** Atender todas las demandas de producción para canalizar las ventas de manera eficiente.
+* **Acciones en Curso:**
+    * Armado de un equipo altamente capacitado (mano de obra, analistas, visitadores) en coordinación con Recursos Humanos.     
+    * Colaboración continua con el área de Almacén para asegurar el flujo de productos hacia las plantas de distribución.       
+* **Enfoque:** Buscar la máxima eficiencia y ganancias para Pesquera Diamante.
+* **Inversiones Futuras:** Se está analizando la adquisición de nuevos equipos y maquinarias para iniciar la producción de conservas de manera más especializada. Se está solicitando la ampliación de almacenes para materias primas.
+
+**3. Propuestas del Área de Marketing y Ventas**
+
+**3.1. Propuesta de Marketing (Nayeli Vanda - Gerente de Marketing)**
+
+* **Objetivo:** Aumentar las ventas.
+* **Cuatro Pilares Estratégicos Propuestos:**
+    1. **Producto:** Mantener la calidad para satisfacer al público objetivo.
+    2. **Precio:** Implementar precios accesibles, competitivos con la competencia y que generen rentabilidad para la empresa y los accionistas.
+    3. **Plaza (Distribución):** Ubicar estratégicamente los puntos de venta para facilitar el acceso a los productos.
+    4. **Promoción:** Fortalecer las redes sociales para informar al público sobre productos, beneficios y medios de pago.      
+
+**3.2. Propuesta de Ventas (Luz Santo - Gerente de Ventas)**
+
+* **Coordinación Interdepartamental:** Se destacó la necesidad de trabajar conjuntamente con Marketing, Producción y Logística. 
+* **Estrategia de Producto Futuro:** Se considera la incorporación de un nuevo proveedor en el año 2023, enfocado en altos estándares de calidad, con el objetivo de asegurar entregas correctas y en menor tiempo.
+
+**4. Propuesta de Cadena de Suministros (Flor Rosales - Experta en Cadena de Suministros)**
+
+* **Propuesta Central:** Implementar una plataforma tecnológica para el seguimiento integral de la cadena de suministro.        
+* **Detalles de la Propuesta:**
+    * Monitoreo de compras y actividades desde el ingreso del bien hasta el pago de facturas de proveedores.
+    * Uso de la plataforma **SAP** para la implementación en el CAME.
+* **Relación con Producción:** Se mencionó que esta plataforma apoyará la adquisición de equipos tecnológicos y la optimización del almacenamiento de materias primas.
+
+**5. Conclusiones y Compromisos Finales (Sergio - Gerente General)**
+
+* **Reconocimiento:** Sergio agradeció las propuestas presentadas.
+* **Advertencia y Compromiso:** Se enfatizó que las mediciones de cada propuesta serán revisadas continuamente. Se recalcó que las declaraciones hechas en la reunión tienen carácter de promesa y serán evaluadas.
+* **Mensaje de Confianza:** Se reafirmó la confianza en el equipo para impulsar el crecimiento de la empresa.
+
+---
+
+**Próximos Pasos:**
+
+* Seguimiento continuo de las propuestas presentadas por Producción, Marketing, Ventas y Cadena de Suministros.
+* Definición de planes de acción concretos basados en las estrategias acordadas.
+
+**Fin de la Reunión.**
+
+--- RESUMEN DE LA REUNIÓN ---
+Aquí tienes un resumen ejecutivo de dos líneas para la minuta:
+
+**La reunión de gerencia de Pesquera Diamante abordó los cambios empresariales, enfocándose en estrategias clave para aumentar ventas mediante un enfoque en producto, precio, distribución y promoción.** **Se acordó implementar una plataforma tecnológica para la cadena de suministro y la adquisición de nueva maquinaria para optimizar la producción y eficiencia.**
+
+Logs del proceso: ['Participantes procesados', 'Temas identificados', 'Acciones extraídas', 'Minuta generada', 'Resumen finalizado']
