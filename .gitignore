@@ -12,7 +12,8 @@ chroma_db/
 
 # sqlite3
 helpdesk.db
-
+historial.db
+*.db*
 # Virtual Environments
 .venv/
 venv/
