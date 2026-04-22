@@ -41,6 +41,9 @@ download ffmpeg-git-full.7z from
     https://www.gyan.dev/ffmpeg/builds/
     add to path bin folder
 
+## para helpdesk_system
+pip install -U langgraph-checkpoint-sqlite
+
 
 ###ejecutar chatBot_local.py con streamlit
 c:/Users/laptop/git/langchain-curso/venv/Scripts/python.exe -m streamlit run chatBot_local.py
@@ -53,3 +56,10 @@ c:/Users/laptop/git/langchain-curso/venv/Scripts/python.exe -m streamlit run cv_
 c:/Users/laptop/git/langchain-curso/venv/Scripts/python.exe -m streamlit run asistente_legal_RAG/app.py
 Ej:
 Que personas participan en los contratos de arrendamiento de locales comerciales?
+
+
+
+###ejecutar asistente_legal_RAG con streamlit
+c:/Users/laptop/git/langchain-curso/venv/Scripts/python.exe -m streamlit run helpdesk_system/app.py
+Ej:
+Tengo un error 500 en la aplicación

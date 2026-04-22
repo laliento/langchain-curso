@@ -12,7 +12,7 @@ from config import *
 class DocumentProcessor:
     """Procesador de documentos para el sistema RAG."""
     
-    def __init__(self, docs_path: str = "docs", chroma_path: str = "./chroma_db"):
+    def __init__(self, docs_path: str = "docs", chroma_path: str = CHROMADB_PATH):
         self.docs_path = Path(docs_path)
         self.chroma_path = Path(chroma_path)
         self.embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_PATH)
