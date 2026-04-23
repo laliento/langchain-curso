@@ -44,6 +44,8 @@ download ffmpeg-git-full.7z from
 ## para helpdesk_system
 pip install -U langgraph-checkpoint-sqlite
 
+##tools
+pip install langchain-experimental wikipedia
 
 ###ejecutar chatBot_local.py con streamlit
 c:/Users/laptop/git/langchain-curso/venv/Scripts/python.exe -m streamlit run chatBot_local.py
