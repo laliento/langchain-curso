@@ -6,10 +6,17 @@ from langchain_core.runnables import RunnablePassthrough
 from typing import Optional, List, Any, Dict, Type, Union
 from pydantic import BaseModel
 import torch
+import logging
 from transformers import AutoProcessor, AutoModelForCausalLM
 from langchain_core.utils.function_calling import convert_to_openai_tool
 import os
+
+# Suprimir warnings de Transformers
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
+
+# Configurar logging para suprimir warnings
+logging.getLogger("transformers").setLevel(logging.ERROR)
 
 
 class LocalGemma4(BaseChatModel):
@@ -57,26 +64,49 @@ class LocalGemma4(BaseChatModel):
         import json
         import re
         
-        # 1. Preparar mensajes y inyectar herramientas en el System Prompt
+        # 1. Preparar mensajes
         messages_dict = []
         
-        # Si hay herramientas vinculadas, las exponemos en el prompt
-        if self.tools:
-            tools_json = json.dumps(self.tools, indent=2)
+        # Detectar si estamos en modo tool calling (hay tool_calls en el historial)
+        has_tool_calls = any(
+            hasattr(m, 'tool_calls') and m.tool_calls 
+            for m in messages
+        )
+        
+        # Detectar si es respuesta de herramienta
+        is_tool_response = any(getattr(m, 'tool_call_id', None) for m in messages)
+
+        if self.tools and not is_tool_response:
+            # Formato OpenAI tools para el prompt
+            tools_json = json.dumps(self.tools, indent=2, ensure_ascii=False)
             system_instruction = (
-                "Eres un asistente que puede usar herramientas. "
-                "Si decides usar una, DEBES responder EXCLUSIVAMENTE con un JSON: "
-                '{"name": "nombre_de_la_herramienta", "arguments": {"arg": "valor"}}. '
-                f"Herramientas disponibles:\n{tools_json}"
+                "Eres un asistente que utiliza herramientas especializadas.\n"
+                "Para usar una herramienta, responde ÚNICAMENTE con un objeto JSON o array de objetos JSON:\n"
+                '{"name": "nombre_de_la_herramienta", "arguments": {"param1": "valor1", "param2": "valor2"}}\n'
+                "O para múltiples herramientas: [{...}, {...}]\n"
+                f"Herramientas disponibles: {tools_json}\n"
+                "IMPORTANTE: El campo 'name' DEBE coincidir EXACTAMENTE con el nombre de una herramienta disponible."
             )
-            # Insertamos la instrucción al inicio
             messages_dict.append({"role": "system", "content": system_instruction})
+        elif is_tool_response:
+            # Si ya tenemos la respuesta de una herramienta, le decimos que responda al usuario
+            messages_dict.append({"role": "system", "content": "Analiza los resultados obtenidos y da una respuesta final al usuario."})
 
         for msg in messages:
             if isinstance(msg, HumanMessage):
                 messages_dict.append({"role": "user", "content": msg.content})
             elif isinstance(msg, AIMessage):
-                messages_dict.append({"role": "assistant", "content": msg.content})
+                # Si el AIMessage tiene tool_calls, no incluimos el contenido en el prompt
+                # porque ya fue procesado como tool call
+                if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                    # Agregamos un mensaje indicando que se usaron herramientas
+                    tool_names = ", ".join([tc.get("name", "unknown") for tc in msg.tool_calls])
+                    messages_dict.append({
+                        "role": "assistant", 
+                        "content": f"[Usé herramientas: {tool_names}]"
+                    })
+                else:
+                    messages_dict.append({"role": "assistant", "content": msg.content})
             elif isinstance(msg, SystemMessage):
                 messages_dict.append({"role": "system", "content": msg.content})
 
@@ -93,47 +123,125 @@ class LocalGemma4(BaseChatModel):
         
         generate_kwargs = {
             "max_new_tokens": self.max_new_tokens,
-            "do_sample": self.temperature > 0,
         }
+        # Solo enviamos flags de muestreo si la temperatura es mayor a 0
         if self.temperature > 0:
+            generate_kwargs["do_sample"] = True
             generate_kwargs["temperature"] = self.temperature
             generate_kwargs["top_p"] = self.top_p
+            generate_kwargs["top_k"] = self.top_k
+        else:
+            # Si la temperatura es 0, forzamos Greedy Decoding
+            generate_kwargs["do_sample"] = False
+
+        # Fusionar con kwargs adicionales (para compatibilidad con LangGraph)
+        generate_kwargs.update({k: v for k, v in kwargs.items() if k not in ['top_p', 'top_k']})
 
         outputs = self.model.generate(**inputs, **generate_kwargs)
         
-        # 3. DECODIFICAR (Aquí es donde se define 'response')
+        # 3. DECODIFICAR
         response = self.processor.decode(
             outputs[0][input_len:],
             skip_special_tokens=True
         ).strip()
         
-        # 4. Crear el mensaje de AI y buscar Tool Calls
+        # --- DEBUG: Ver qué responde el modelo exactamente ---
+        print(f"\n[DEBUG - Respuesta RAW del modelo]:\n{response}\n")
+
+        # 4. Crear el mensaje de AI
         ai_message = AIMessage(content=response)
         
-        if self.tools:
-            # Buscamos un patrón JSON en la respuesta
-            json_match = re.search(r'\{[\s\S]*"name"[\s\S]*"arguments"[\s\S]*\}', response)
-            if json_match:
+        if self.tools and not is_tool_response:
+            # Intentar parsear como array JSON primero (múltiples tool calls)
+            tool_calls = []
+            try:
+                # Intentar parsear como array
+                data = json.loads(response)
+                if isinstance(data, list):
+                    # Es un array de tool calls
+                    matches = data
+                elif isinstance(data, dict) and "name" in data:
+                    # Es un solo tool call
+                    matches = [data]
+                else:
+                    matches = []
+            except:
+                # Si falla, intentar con regex
+                # Buscar bloques JSON que tengan "name" y "arguments"
+                matches = re.findall(r'\{[\s\S]*?"name"[\s\S]*?"arguments"[\s\S]*?\}', response)
+            
+            print(f"[DEBUG - Coincidencias Regex]: {matches}")
+            
+            for i, match in enumerate(matches):
                 try:
-                    # Limpiamos posibles ruidos antes/después del JSON
-                    clean_json = json_match.group()
-                    tool_data = json.loads(clean_json)
+                    if isinstance(match, dict):
+                        clean_match = match
+                    else:
+                        clean_match = match.strip()
+                        clean_match = json.loads(clean_match)
                     
-                    # Formato oficial de LangChain para tool_calls
-                    ai_message.tool_calls = [{
-                        "name": tool_data["name"],
-                        "args": tool_data["arguments"],
-                        "id": f"call_{os.urandom(4).hex()}",
-                        "type": "tool_call"
-                    }]
+                    t_name = clean_match.get("name")
+                    t_args = clean_match.get("arguments", {})
+                    
+                    # Asegurar que t_args sea un dict
+                    if isinstance(t_args, str):
+                        t_args = {"input": t_args}
+                    
+                    if t_name:
+                        print(f"[DEBUG - Tool Call {i} corregida]: {t_name} con args {t_args}")
+                        tool_calls.append({
+                            "name": t_name,
+                            "args": t_args,
+                            "id": f"call_{os.urandom(4).hex()}",
+                            "type": "tool_call"
+                        })
+                    else:
+                        print(f"[DEBUG - Tool Call {i} sin nombre válido]: {clean_match}")
                 except Exception as e:
-                    print(f"Error parseando tool_call: {e}")
+                    print(f"[DEBUG - Error en Match {i}]: {e} | Contenido fallido: {match}")
+                    continue
+            
+            if tool_calls:
+                ai_message.tool_calls = tool_calls
+                ai_message.content = ""  # Vaciar para que el supervisor actúe
+                print(f"[DEBUG - Total Tool Calls inyectadas]: {len(tool_calls)}")
 
         return ChatResult(generations=[ChatGeneration(message=ai_message)])
     
     @property
     def _llm_type(self) -> str:
         return "local-gemma-4"
+    
+    def copy(self, **kwargs: Any) -> "LocalGemma4":
+        """Create a copy of the model with updated parameters."""
+        # Obtener los parámetros actuales
+        params = {
+            "model_path": self.model_path,
+            "device": self.device,
+            "dtype": self.dtype,
+            "max_new_tokens": self.max_new_tokens,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k": self.top_k,
+            "enable_thinking": self.enable_thinking,
+            "tools": self.tools,
+        }
+        params.update(kwargs)
+        return LocalGemma4(**params)
+    
+    def __getstate__(self):
+        """Handle pickling - exclude model and processor which can't be pickled."""
+        state = self.__dict__.copy()
+        # No picklear el modelo y processor (se recargarán)
+        state['model'] = None
+        state['processor'] = None
+        return state
+    
+    def __setstate__(self, state):
+        """Handle unpickling - reload model and processor."""
+        self.__dict__.update(state)
+        # Recargar el modelo
+        self._load_model()
     
     def _stream(
         self,
@@ -143,8 +251,8 @@ class LocalGemma4(BaseChatModel):
     ):
         """Stream responses for messages."""
         # For simplicity, generate full response and yield it as a single chunk
-        result = self._generate([messages], stop=stop, **kwargs)
-        for chunk in result.generations[0]:
+        result = self._generate(messages, stop=stop, **kwargs)
+        for chunk in result.generations:
             yield chunk
     
     def bind_tools(

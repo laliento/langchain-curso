@@ -47,6 +47,13 @@ pip install -U langgraph-checkpoint-sqlite
 ##tools
 pip install langchain-experimental wikipedia
 
+###Agents
+#Gmail agentes
+pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+#MultiAgente tipo supervisor (hay otros de tipo network o de jerarquía)
+pip install langgraph-supervisor
+
 ###ejecutar chatBot_local.py con streamlit
 c:/Users/laptop/git/langchain-curso/venv/Scripts/python.exe -m streamlit run chatBot_local.py
 
@@ -61,7 +68,8 @@ Que personas participan en los contratos de arrendamiento de locales comerciales
 
 
 
-###ejecutar asistente_legal_RAG con streamlit
+###ejecutar helpdesk_system con streamlit
 c:/Users/laptop/git/langchain-curso/venv/Scripts/python.exe -m streamlit run helpdesk_system/app.py
 Ej:
 Tengo un error 500 en la aplicación
+Mi carro está tirando aceite del motor
