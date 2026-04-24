@@ -103,6 +103,11 @@ Responde solo con "automatico" o "escalado" y una breve justificación (máximo 
                 ]
             }
         except Exception as e:
+            import traceback
+            print(f"[DEBUG] clasificación falló: {e}.")
+            error_trace = traceback.format_exc()
+    
+            print(f"\n[DEBUG] Error detallado:\n{error_trace}")
             categoria = "automatico" if confianza >= 0.60 else "escalado"
             return {
                 "categoria": categoria,

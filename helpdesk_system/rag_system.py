@@ -79,10 +79,12 @@ Genera 3 versiones diferentes de la consulta original, considerando:
 - Sinónimos técnicos
 - Diferentes formas de expresar el mismo problema
 - Variaciones en terminología de helpdesk
+- Añade aparte de las alternivas la consulta original
+- Importante sólo responde versiones sin nada de contexto extra, sólo los ejemplos separados por un salto de línea.
 
 Consulta original: {question}
 
-Versiones alternativas:"""
+"""
         )
     
     def buscar(self, consulta: str) -> Dict[str, Any]:
@@ -159,7 +161,7 @@ Instrucciones:
 - Mantén un tono profesional pero amigable
 - No inventes información que no esté en el contexto
 
-Contexto de la base de conocimiento:
+Contexto de la base de conocimiento:\n
 {contexto}
 
 Consulta del usuario: {consulta}

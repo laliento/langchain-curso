@@ -10,7 +10,7 @@ root_path = str(Path(__file__).resolve().parent.parent)
 if root_path not in sys.path:
     sys.path.append(root_path)
 
-from utils.local_gemma import LocalGemma4
+from utils.local_gemma_agent import LocalGemma4
 from config import LLM_MODEL_PATH
 
 # 1. Instancia del modelo único
@@ -36,14 +36,19 @@ def calcular(expresion: str) -> str:
 agente_investigacion = create_react_agent(
     model=model,
     tools=[buscar_web],
-    prompt="Eres un experto investigador. Si te piden un dato, búscalo.",
+    prompt= (
+        "Eres un experto investigador con memoria fotográfica.\n"
+    "Antes de responder, verifica mentalmente los datos históricos.\n"
+    "PASO 1: Analiza la pregunta.\n"
+    "PASO 2: Recuerda los datos exactos del evento.\n"
+    "PASO 3: Responde con la verdad histórica de forma muy breve.\n"),
     name="investigador"
 )
 
 agente_matematicas = create_react_agent(
     model=model,
     tools=[calcular],
-    prompt="Eres un calculador preciso. Solo resuelves matemáticas.",
+    prompt="Eres un calculador preciso. Solo resuelves matemáticas. Responde muy brevemente con la pregunta que se te hizo y la respuesta obtenida.",
     name="matematico"
 )
 
@@ -52,16 +57,16 @@ agente_matematicas = create_react_agent(
 workflow = create_supervisor(
     [agente_matematicas, agente_investigacion],
     model=model,
-    prompt=(
-        "Eres el supervisor oficial. Tu ÚNICA función es delegar tareas a los agentes especializados.\n"
-        "Si la pregunta es de matemáticas, DEBES delegar al agente 'matematico' usando la herramienta 'transfer_to_matematico'.\n"
-        "Si la pregunta es de información/hechos, DEBES delegar al agente 'investigador' usando la herramienta 'transfer_to_investigador'.\n"
-        "Si la pregunta contiene ambas cosas, delega a ambos agentes en orden.\n"
-        "IMPORTANTE: No respondas con texto normal. Responde ÚNICAMENTE con una llamada a herramienta en formato JSON.\n"
-        "Formato correcto: {\"name\": \"transfer_to_matematico\", \"arguments\": {\"input\": \"la pregunta específica\"}}\n"
-        "O para múltiples delegaciones: [{\"name\": \"transfer_to_matematico\", \"arguments\": {...}}, {\"name\": \"transfer_to_investigador\", \"arguments\": {...}}]\n"
-        "Pregunta del usuario: {messages}"
-    ),
+   prompt = (
+    "Eres el Supervisor Orquestador. Tu ÚNICO trabajo es gestionar agentes.\n\n"
+    "__TOOLS__\n\n"
+    "REGLAS CRÍTICAS:\n"
+    "1. Tienes PROHIBIDO responder preguntas tú mismo.\n"
+    "2. Si la información no viene de un mensaje [ASSISTANT], entonces NO la conoces.\n"
+    "3. Si falta información, DELEGA usando el comando:  DELEGAR_A_AGENTE: ... | INPUT: ...\n"
+    "4. Solo cuando TODAS las partes de la pregunta del usuario tengan una respuesta de un [ASSISTANT], redacta la respuesta final combinándolas.\n\n"
+    "¡NO INVENTES RESPUESTAS! Si no ves un mensaje [ASSISTANT] con el dato."
+),
     max_iterations=5
 )
 
@@ -71,7 +76,7 @@ supervisor = workflow.compile()
 response = supervisor.invoke({
     "messages": [{
         "role": "user", 
-        "content": "¿Cuánto es 1543 multiplicado por 2.5 y quién ganó el mundial de 1986?"
+        "content": "¿Cuánto es 1543 multiplicado por 2.5 y cuando nació alber einstein?"
     }]
 })
 

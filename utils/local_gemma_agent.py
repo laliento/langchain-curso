@@ -1,6 +1,6 @@
 from langchain_core.language_models import BaseChatModel
 from langchain_core.outputs import ChatGenerationChunk, ChatResult, ChatGeneration
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, BaseMessage, AIMessageChunk
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage, BaseMessage, AIMessageChunk
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from typing import Optional, List, Any, Dict, Type, Union
@@ -53,7 +53,7 @@ class LocalGemma4(BaseChatModel):
         
         self.model = _SHARED_MODEL
         self.processor = _SHARED_PROCESSOR
-    
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -64,6 +64,8 @@ class LocalGemma4(BaseChatModel):
         is_supervisor = any("transfer_to" in t.get("function", {}).get("name", "") for t in (self.tools or []))
         current_role = "SUPERVISOR" if is_supervisor else "ESPECIALISTA"
         print(f"\n>>> EJECUTANDO LLM COMO: {current_role} <<<")
+
+        """Generate responses for a list of messages."""
         import json
         import re
         
@@ -78,41 +80,83 @@ class LocalGemma4(BaseChatModel):
         
         # Detectar si es respuesta de herramienta
         is_tool_response = any(getattr(m, 'tool_call_id', None) for m in messages)
-
-        if self.tools and not is_tool_response:
-            # Formato OpenAI tools para el prompt
-            tools_json = json.dumps(self.tools, indent=2, ensure_ascii=False)
-            system_instruction = (
-                "Eres un asistente que utiliza herramientas especializadas.\n"
-                "Para usar una herramienta, responde ÚNICAMENTE con un objeto JSON o array de objetos JSON:\n"
-                '{"name": "nombre_de_la_herramienta", "arguments": {"param1": "valor1", "param2": "valor2"}}\n'
-                "O para múltiples herramientas: [{...}, {...}]\n"
-                f"Herramientas disponibles: {tools_json}\n"
-                "IMPORTANTE: El campo 'name' DEBE coincidir EXACTAMENTE con el nombre de una herramienta disponible."
-            )
-            messages_dict.append({"role": "system", "content": system_instruction})
-        elif is_tool_response:
-            # Si ya tenemos la respuesta de una herramienta, le decimos que responda al usuario
-            messages_dict.append({"role": "system", "content": "Analiza los resultados obtenidos y da una respuesta final al usuario."})
+        tools_formatted = ""
+        if is_supervisor:
+            # Modo supervisor
+            tools_desc = []
+            for t in self.tools:
+                func_info = t.get("function", {})
+                real_name = func_info.get("name") # ej. transfer_to_matematico
+                
+                # Intentamos recuperar una descripción más rica
+                # Si el supervisor no la tiene, podemos 'limpiar' el nombre para el prompt
+                clean_name = real_name.replace("transfer_to_", "")
+                desc = custom_desc = "Busca información general, cultural o de hechos históricos pasados sobre un tema específico." if "investigador" in clean_name else "Resuelve sólo operaciones matemáticas complejas." # desc_map.get(clean_name, "Agente especializado")
+                
+                tools_desc.append(f"- AGENT: {real_name}\n  Especialidad: {desc}")
+                
+                tools_formatted = "\n".join(tools_desc)
+            #system_instruction = (
+            #    f"AGENTES DISPONIBLES:\n{tools_formatted}\n\n"
+            #    "REGLA DE ORO: Debes usar el nombre EXACTO del agente (ej. 'transfer_to_matematico').\n"
+            #    "Tu respuesta debe ser un JSON: {\"name\": \"transfer_to_...\", \"arguments\": {\"input\": \"...\"}} \n"
+            #    "Si necesitas usar varias herramientas, responde con una LISTA de objetos JSON: \n"
+            #    "[{\"name\": \"transfer_to_...\", \"arguments\": {\"input\": \"...\"}, {\"name\": \"transfer_to_...\", \"arguments\": {\"input\": \"...\"}]\n"
+            #    "No escribas nada más que el JSON."
+            #)
+            #messages_dict.append({"role": "system", "content": system_instruction})
+        #elif is_tool_response:
+        #    # Si ya tenemos la respuesta de una herramienta, le decimos que responda al usuario
+        #    messages_dict.append({"role": "system", "content": "Analiza los resultados obtenidos y da una respuesta final al usuario."})
 
         for msg in messages:
             if isinstance(msg, HumanMessage):
-                messages_dict.append({"role": "user", "content": msg.content})
+                if is_supervisor:
+                    messages_dict.append({"role": "user", "content": msg.content})
+                elif tools_formatted and not is_tool_response: # si es humano, pero que no sea el original
+                    messages_dict.append({"role": "user", "content": msg.content})
             elif isinstance(msg, AIMessage):
                 # Si el AIMessage tiene tool_calls, no incluimos el contenido en el prompt
                 # porque ya fue procesado como tool call
-                if hasattr(msg, 'tool_calls') and msg.tool_calls:
-                    # Agregamos un mensaje indicando que se usaron herramientas
-                    tool_names = ", ".join([tc.get("name", "unknown") for tc in msg.tool_calls])
-                    messages_dict.append({
-                        "role": "assistant", 
-                        "content": f"[Usé herramientas: {tool_names}]"
-                    })
-                else:
-                    messages_dict.append({"role": "assistant", "content": msg.content})
+                if is_supervisor:
+                    if not msg.tool_calls:
+                        agent_name = msg.name if msg.name else "unknown"
+                        full_name = f"transfer_to_{agent_name}"
+                        content = msg.content
+                        resultado = f"Respuesta obtenida de AGENT {full_name}: {content}"
+                        messages_dict.append({"role": "assistant", "content": resultado})
+                if not is_supervisor:
+                    if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                        first_tool_call = msg.tool_calls[0]
+                        args = first_tool_call.get('args', {})
+                        # Verificamos que 'input' exista en los argumentos y que no sea un handoff
+                        if 'input' in args and first_tool_call.get('name') != 'transfer_back_to_supervisor':
+                            specific_input = args.get('input')
+                            print(f"DEBUG - Input detectado: {specific_input}")
+                            messages_dict.append({"role": "user", "content": specific_input})
+                        #else:
+                        #    print("DEBUG - Mensaje descartado (es un handoff o no tiene input)")
+                        #    if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                        #        # Agregamos un mensaje indicando que se usaron herramientas
+                        #        tool_names = ", ".join([tc.get("name", "unknown") for tc in msg.tool_calls])
+                        #        messages_dict.append({
+                        #            "role": "assistant", 
+                        #            "content": f"[Usé herramientas: {tool_names}]"
+                        #        })
+                        #    else:
+                        #        messages_dict.append({"role": "assistant", "content": msg.content})
             elif isinstance(msg, SystemMessage):
-                messages_dict.append({"role": "system", "content": msg.content})
-
+                if tools_formatted:
+                    content = msg.content.replace("__TOOLS__", tools_formatted)
+                    messages_dict.append({"role": "system", "content": content})
+                else:
+                    messages_dict.append({"role": "system", "content": msg.content})
+            #elif isinstance(msg, ToolMessage):
+            #    messages_dict.append({
+            #        "role": "tool", 
+            #        "tool_call_id": msg.tool_call_id,
+            #        "content": msg.content
+            #    })
         # --- SENSOR DE CONTEXTO ---
         print("\n" + "="*50)
         print("PROMPT ENVIADO AL MODELO (MESSAGES_DICT):")
@@ -160,60 +204,84 @@ class LocalGemma4(BaseChatModel):
         # 4. Crear el mensaje de AI
         ai_message = AIMessage(content=response)
         
-        if self.tools and not is_tool_response:
-            # Intentar parsear como array JSON primero (múltiples tool calls)
+        if self.tools and is_supervisor:
             tool_calls = []
-            try:
-                # Intentar parsear como array
-                data = json.loads(response)
-                if isinstance(data, list):
-                    # Es un array de tool calls
-                    matches = data
-                elif isinstance(data, dict) and "name" in data:
-                    # Es un solo tool call
-                    matches = [data]
-                else:
-                    matches = []
-            except:
-                # Si falla, intentar con regex
-                # Buscar bloques JSON que tengan "name" y "arguments"
-                matches = re.findall(r'\{[\s\S]*?"name"[\s\S]*?"arguments"[\s\S]*?\}', response)
+            pattern = r"DELEGAR_A_AGENTE:\s*(transfer_to_[a-z_]+)\s*\|\s*INPUT:\s*(.*)"
+            matches = re.findall(pattern, response, re.IGNORECASE)
+            for i, (t_name, t_input) in enumerate(matches):
+                print(f"[DEBUG - Comando detectado]: Agente: {t_name} | Input: {t_input}")
+                
+                tool_calls.append({
+                    "name": t_name.strip(),
+                    "args": {"input": t_input.strip()},
+                    "id": f"call_{os.urandom(4).hex()}",
+                    "type": "tool_call"
+                })
             
-            print(f"[DEBUG - Coincidencias Regex]: {matches}")
-            
-            for i, match in enumerate(matches):
-                try:
-                    if isinstance(match, dict):
-                        clean_match = match
-                    else:
-                        clean_match = match.strip()
-                        clean_match = json.loads(clean_match)
-                    
-                    t_name = clean_match.get("name")
-                    t_args = clean_match.get("arguments", {})
-                    
-                    # Asegurar que t_args sea un dict
-                    if isinstance(t_args, str):
-                        t_args = {"input": t_args}
-                    
-                    if t_name:
-                        print(f"[DEBUG - Tool Call {i} corregida]: {t_name} con args {t_args}")
-                        tool_calls.append({
-                            "name": t_name,
-                            "args": t_args,
-                            "id": f"call_{os.urandom(4).hex()}",
-                            "type": "tool_call"
-                        })
-                    else:
-                        print(f"[DEBUG - Tool Call {i} sin nombre válido]: {clean_match}")
-                except Exception as e:
-                    print(f"[DEBUG - Error en Match {i}]: {e} | Contenido fallido: {match}")
-                    continue
-            
+            # Intentar parsear como array JSON primero (múltiples tool calls)
+            #clean_response = response.strip()
+            #if clean_response.startswith("```json"):
+            #    clean_response = clean_response.replace("```json", "").replace("```", "").strip()
+            #elif clean_response.startswith("```"):
+            #    clean_response = clean_response.replace("```", "").strip()
+            #tool_calls = []
+            #try:
+            #    # Intentar parsear como array
+            #    data = json.loads(clean_response)
+            #    if isinstance(data, list):
+            #        # Es un array de tool calls
+            #        matches = data
+            #    elif isinstance(data, dict) and "name" in data:
+            #        # Es un solo tool call
+            #        matches = [data]
+            #    else:
+            #        matches = []
+            #except Exception as e:
+            #    # Si falla, intentar con regex
+            #    # Buscar bloques JSON que tengan "name" y "arguments"
+            #    print(f"[DEBUG] json.loads falló: {e}. Intentando Regex: {clean_response}")
+            #    matches = re.findall(r'\{[\s\S]*?"name"[\s\S]*?"arguments"[\s\S]*?\}', response)
+            #
+            #print(f"[DEBUG - Coincidencias Regex]: {matches}")
+            #
+            #for i, match in enumerate(matches):
+            #    try:
+            #        if isinstance(match, dict):
+            #            clean_match = match
+            #        else:
+            #            clean_match = match.strip()
+            #            clean_match = json.loads(clean_match)
+            #        
+            #        t_name = clean_match.get("name")
+            #        t_args = clean_match.get("arguments", {})
+            #        
+            #        # Asegurar que t_args sea un dict
+            #        if isinstance(t_args, str):
+            #            t_args = {"input": t_args}
+            #        
+            #        if t_name:
+            #            print(f"[DEBUG - Tool Call {i} corregida]: {t_name} con args {t_args}")
+            #            tool_calls.append({
+            #                "name": t_name,
+            #                "args": t_args,
+            #                "id": f"call_{os.urandom(4).hex()}",
+            #                "type": "tool_call"
+            #            })
+            #        else:
+            #            print(f"[DEBUG - Tool Call {i} sin nombre válido]: {clean_match}")
+            #    except Exception as e:
+            #        print(f"[DEBUG - Error en Match {i}]: {e} | Contenido fallido: {match}")
+            #        continue
             if tool_calls:
                 ai_message.tool_calls = tool_calls
-                ai_message.content = ""  # Vaciar para que el supervisor actúe
-                print(f"[DEBUG - Total Tool Calls inyectadas]: {len(tool_calls)}")
+                ai_message.content = ""  # Vaciamos para que LangGraph ejecute las herramientas
+            #else:
+            #    # Si no hubo comandos de LLAMAR, es que el modelo escribió la respuesta final
+            #    ai_message.content = response
+            #if tool_calls:
+            #    ai_message.tool_calls = tool_calls
+            #    ai_message.content = ""  # Vaciar para que el supervisor actúe
+            #    print(f"[DEBUG - Total Tool Calls inyectadas]: {len(tool_calls)}")
 
         return ChatResult(generations=[ChatGeneration(message=ai_message)])
     
