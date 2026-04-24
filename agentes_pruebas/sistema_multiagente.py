@@ -12,6 +12,7 @@ if root_path not in sys.path:
 
 from utils.local_gemma_agent import LocalGemma4
 from config import LLM_MODEL_PATH
+from config_agent import AGENT_INVESTIGATOR, AGENT_MATEMATICO
 
 # 1. Instancia del modelo único
 # Usamos temperature=0 para agentes para evitar que "alucinen" con los formatos JSON
@@ -19,7 +20,7 @@ model = LocalGemma4(model_path=LLM_MODEL_PATH, temperature=0)
 
 # 2. Definición de herramientas
 @tool
-def buscar_web(query: str) -> str:
+def buscar(query: str) -> str:
     """Busca información técnica o general en la web sobre un tema específico."""
     return f"Resultados de búsqueda para: {query}. (Simulación: Gemma es un modelo de Google)."
 
@@ -35,21 +36,21 @@ def calcular(expresion: str) -> str:
 # 3. Nodos de Agentes (Especialistas)
 agente_investigacion = create_react_agent(
     model=model,
-    tools=[buscar_web],
+    tools=[buscar],
     prompt= (
         "Eres un experto investigador con memoria fotográfica.\n"
     "Antes de responder, verifica mentalmente los datos históricos.\n"
     "PASO 1: Analiza la pregunta.\n"
     "PASO 2: Recuerda los datos exactos del evento.\n"
     "PASO 3: Responde con la verdad histórica de forma muy breve.\n"),
-    name="investigador"
+    name=AGENT_INVESTIGATOR
 )
 
 agente_matematicas = create_react_agent(
     model=model,
     tools=[calcular],
     prompt="Eres un calculador preciso. Solo resuelves matemáticas. Responde muy brevemente con la pregunta que se te hizo y la respuesta obtenida.",
-    name="matematico"
+    name=AGENT_MATEMATICO
 )
 
 # 4. Orquestador (Supervisor)

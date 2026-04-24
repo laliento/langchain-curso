@@ -10,7 +10,13 @@ import logging
 from transformers import AutoProcessor, AutoModelForCausalLM
 from langchain_core.utils.function_calling import convert_to_openai_tool
 import os
-
+import sys
+# Buscamos la raíz del proyecto (un nivel arriba de donde estamos)
+from pathlib import Path
+root_path = str(Path(__file__).resolve().parent.parent)
+if root_path not in sys.path:
+    sys.path.append(root_path)
+from agentes_pruebas.config_agent import AGENT_DESCRIPTIONS as desc_map
 # Suprimir warnings de Transformers
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
@@ -82,33 +88,27 @@ class LocalGemma4(BaseChatModel):
         is_tool_response = any(getattr(m, 'tool_call_id', None) for m in messages)
         tools_formatted = ""
         if is_supervisor:
-            # Modo supervisor
             tools_desc = []
             for t in self.tools:
                 func_info = t.get("function", {})
                 real_name = func_info.get("name") # ej. transfer_to_matematico
-                
-                # Intentamos recuperar una descripción más rica
-                # Si el supervisor no la tiene, podemos 'limpiar' el nombre para el prompt
                 clean_name = real_name.replace("transfer_to_", "")
-                desc = custom_desc = "Busca información general, cultural o de hechos históricos pasados sobre un tema específico." if "investigador" in clean_name else "Resuelve sólo operaciones matemáticas complejas." # desc_map.get(clean_name, "Agente especializado")
-                
+                desc = desc_map.get(clean_name, "Agente especializado")
                 tools_desc.append(f"- AGENT: {real_name}\n  Especialidad: {desc}")
-                
                 tools_formatted = "\n".join(tools_desc)
-            #system_instruction = (
-            #    f"AGENTES DISPONIBLES:\n{tools_formatted}\n\n"
-            #    "REGLA DE ORO: Debes usar el nombre EXACTO del agente (ej. 'transfer_to_matematico').\n"
-            #    "Tu respuesta debe ser un JSON: {\"name\": \"transfer_to_...\", \"arguments\": {\"input\": \"...\"}} \n"
-            #    "Si necesitas usar varias herramientas, responde con una LISTA de objetos JSON: \n"
-            #    "[{\"name\": \"transfer_to_...\", \"arguments\": {\"input\": \"...\"}, {\"name\": \"transfer_to_...\", \"arguments\": {\"input\": \"...\"}]\n"
-            #    "No escribas nada más que el JSON."
-            #)
-            #messages_dict.append({"role": "system", "content": system_instruction})
-        #elif is_tool_response:
-        #    # Si ya tenemos la respuesta de una herramienta, le decimos que responda al usuario
-        #    messages_dict.append({"role": "system", "content": "Analiza los resultados obtenidos y da una respuesta final al usuario."})
-
+            tools_desc = []
+            #for t in self.tools:
+            #    func_info = t.get("function", {})
+            #    real_name = func_info.get("name") # ej. transfer_to_matematico
+            #    
+            #    # Intentamos recuperar una descripción más rica
+            #    # Si el supervisor no la tiene, podemos 'limpiar' el nombre para el prompt
+            #    clean_name = real_name.replace("transfer_to_", "")
+            #    desc = custom_desc = "Busca información general, cultural o de hechos históricos pasados sobre un tema específico." if "investigador" in clean_name else "Resuelve sólo operaciones matemáticas complejas." # desc_map.get(clean_name, "Agente especializado")
+            #    
+            #    tools_desc.append(f"- AGENT: {real_name}\n  Especialidad: {desc}")
+            #    
+            #    tools_formatted = "\n".join(tools_desc)
         for msg in messages:
             if isinstance(msg, HumanMessage):
                 if is_supervisor:
