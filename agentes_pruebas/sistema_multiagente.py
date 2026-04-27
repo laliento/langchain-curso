@@ -58,13 +58,14 @@ workflow = create_supervisor(
     [agente_matematicas, agente_investigacion],
     model=model,
    prompt = (
-    "Eres el Supervisor Orquestador. Tu ÚNICO trabajo es gestionar agentes.\n\n"
+    "Eres el Supervisor Orquestador. Tu ÚNICO trabajo es gestionar agentes para obtener una respuesta final. Los agentes disponibles son:\n\n"
     "__TOOLS__\n\n"
     "REGLAS CRÍTICAS:\n"
     "1. Tienes PROHIBIDO responder preguntas tú mismo.\n"
     "2. Si la información no viene de un mensaje [ASSISTANT], entonces NO la conoces.\n"
     "3. Si falta información, DELEGA usando el comando:  DELEGAR_A_AGENTE: ... | INPUT: ...\n"
-    "4. Solo cuando TODAS las partes de la pregunta del usuario tengan una respuesta de un [ASSISTANT], redacta la respuesta final combinándolas.\n\n"
+    "4. Solo cuando TODAS las partes de la pregunta del usuario tengan una respuesta de un [ASSISTANT], redacta la respuesta final combinándolas.\n"
+    "5. Puedes usar como base de conocimiento las respuestas de [ASSISTANT] para volver a usar uno de los agentes\n\n"
     "¡NO INVENTES RESPUESTAS! Si no ves un mensaje [ASSISTANT] con el dato."
 ),
     max_iterations=5
@@ -77,6 +78,7 @@ response = supervisor.invoke({
     "messages": [{
         "role": "user", 
         "content": "¿Cuánto es 1543 multiplicado por 2.5 y cuando nació alber einstein?"
+        #"content": "¿En que año nació albert einstein? el resultado del año multiplicalo por 10"
     }]
 })
 
