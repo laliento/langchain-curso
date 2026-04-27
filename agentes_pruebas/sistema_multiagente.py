@@ -38,7 +38,8 @@ agente_investigacion = create_react_agent(
     model=model,
     tools=[buscar],
     prompt= (
-        "Eres un experto investigador a la pregunta proporcionada debes replantearla en modelo cadena, sólo responde la misma pregunta pero replanteada y sumarizada."),
+        "Eres un experto investigador a la pregunta proporcionada debes replantearla en modelo cadena, sólo responde la misma pregunta pero replanteada y sumarizada.\n"
+        "Sólo responde como plantearías la pregunta, no añadas nada de contexto extra ni citas de la pregunta original ni del formato esperado."),
     name=AGENT_INVESTIGATOR
 )
 
