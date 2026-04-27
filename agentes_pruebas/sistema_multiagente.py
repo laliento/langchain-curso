@@ -22,14 +22,14 @@ model = LocalGemma4(model_path=LLM_MODEL_PATH, temperature=0)
 @tool
 def buscar(query: str) -> str:
     """Busca información técnica o general en la web sobre un tema específico."""
-    return f"Resultados de búsqueda para: {query}. (Simulación: Gemma es un modelo de Google)."
+    return "Nacio el 28 de febrero de 1989"
 
 @tool
 def calcular(expresion: str) -> str:
     """Resuelve operaciones matemáticas complejas. Ejemplo de entrada: '2 + 2 * 5'."""
     try:
         # Nota: En producción, usa un parser seguro en lugar de eval()
-        return f"Resultado: {eval(expresion)}"
+        return eval(expresion)
     except Exception as e:
         return f"Error en el cálculo: {str(e)}"
 
@@ -38,18 +38,16 @@ agente_investigacion = create_react_agent(
     model=model,
     tools=[buscar],
     prompt= (
-        "Eres un experto investigador con memoria fotográfica.\n"
-    "Antes de responder, verifica mentalmente los datos históricos.\n"
-    "PASO 1: Analiza la pregunta.\n"
-    "PASO 2: Recuerda los datos exactos del evento.\n"
-    "PASO 3: Responde con la verdad histórica de forma muy breve.\n"),
+        "Eres un experto investigador a la pregunta proporcionada debes replantearla en modelo cadena, sólo responde la misma pregunta pero replanteada y sumarizada."),
     name=AGENT_INVESTIGATOR
 )
 
 agente_matematicas = create_react_agent(
     model=model,
     tools=[calcular],
-    prompt="Eres un calculador preciso. Solo resuelves matemáticas. Responde muy brevemente con la pregunta que se te hizo y la respuesta obtenida.",
+    prompt=(
+        "Eres un calculador preciso. Del la siguiente pregunta para resolver un problema matemático, sólo responde con la operación matemática para resolverlo NADA extra.\n"
+        "Por ejemplo de la pregunta cuanto es 8 por 9 más 2, tu respuesta sólo será la operación matemática como: 9 * 8 + 2"),
     name=AGENT_MATEMATICO
 )
 
