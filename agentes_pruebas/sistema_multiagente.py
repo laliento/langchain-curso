@@ -77,8 +77,8 @@ supervisor = workflow.compile()
 response = supervisor.invoke({
     "messages": [{
         "role": "user", 
-        "content": "¿Cuánto es 1543 multiplicado por 2.5 y cuando nació alber einstein?"
-        #"content": "¿En que año nació albert einstein? el resultado del año multiplicalo por 10"
+        #"content": "¿Cuánto es 1543 multiplicado por 2.5 y cuando nació albert einstein?"
+        "content": "¿En que año nació albert einstein? el resultado del año multiplicalo por 10"
     }]
 })
 

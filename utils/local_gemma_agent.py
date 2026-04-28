@@ -50,7 +50,7 @@ class LocalGemma4(BaseChatModel):
         
         if _SHARED_MODEL is None:
             from transformers import AutoProcessor, AutoModelForCausalLM
-            print(f"--- CARGANDO PESOS POR ÚNICA VEZ ---")
+            print(f"--- CARGANDO MODELO POR ÚNICA VEZ ---")
             _SHARED_PROCESSOR = AutoProcessor.from_pretrained(self.model_path)
             _SHARED_MODEL = AutoModelForCausalLM.from_pretrained(self.model_path, 
                                                                dtype=self.dtype, 

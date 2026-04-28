@@ -44,7 +44,7 @@ class LocalGemma4(BaseChatModel):
         
         if _SHARED_MODEL is None:
             from transformers import AutoProcessor, AutoModelForCausalLM
-            print(f"--- CARGANDO PESOS POR ÚNICA VEZ ---")
+            print(f"--- CARGANDO MODELO POR ÚNICA VEZ ---")
             _SHARED_PROCESSOR = AutoProcessor.from_pretrained(self.model_path)
             _SHARED_MODEL = AutoModelForCausalLM.from_pretrained(self.model_path, 
                                                                dtype=self.dtype, 
@@ -63,7 +63,7 @@ class LocalGemma4(BaseChatModel):
         # 0. Identificar rol
         is_supervisor = any("transfer_to" in t.get("function", {}).get("name", "") for t in (self.tools or []))
         current_role = "SUPERVISOR" if is_supervisor else "ESPECIALISTA"
-        print(f"\n>>> EJECUTANDO LLM COMO: {current_role} <<<")
+        #print(f"\n>>> EJECUTANDO LLM COMO: {current_role} <<<")
         import json
         import re
         
@@ -155,7 +155,7 @@ class LocalGemma4(BaseChatModel):
         ).strip()
         
         # --- DEBUG: Ver qué responde el modelo exactamente ---
-        print(f"\n[DEBUG - Respuesta RAW del modelo]:\n{response}\n")
+        #print(f"\n[DEBUG - Respuesta RAW del modelo]:\n{response}\n")
 
         # 4. Crear el mensaje de AI
         ai_message = AIMessage(content=response)

@@ -199,7 +199,6 @@ Responde solo con "automatico" o "escalado" y una breve justificación (máximo 
                 "escalado": "escalado"
             }
         )
-
         graph.add_conditional_edges(
             "escalado",
             self.decidir_desde_humano,
@@ -208,12 +207,10 @@ Responde solo con "automatico" o "escalado" y una breve justificación (máximo 
                 "esperar": END # Pausar la ejecucion del grafo hasta que responda el humano
             }
         )
-
         graph.add_edge("procesar_humano", END)
         graph.add_edge("respuesta_final", END)
 
         self.graph = graph
-
         return graph
     
     def compilar(self):
