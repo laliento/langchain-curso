@@ -58,14 +58,15 @@ workflow = create_supervisor(
     [agente_matematicas, agente_investigacion],
     model=model,
    prompt = (
-    "Eres el Supervisor Orquestador. Tu ÚNICO trabajo es gestionar agentes para obtener una respuesta final. Los agentes disponibles son:\n\n"
+    "Eres el Supervisor Orquestador. Tu ÚNICO trabajo es gestionar agentes para obtener una respuesta final tú no respondes basado en tu conocimiento o calculos. Los agentes disponibles son:\n\n"
     "__TOOLS__\n\n"
     "REGLAS CRÍTICAS:\n"
-    "1. Tienes PROHIBIDO responder preguntas tú mismo.\n"
-    "2. Si la información no viene de un mensaje [ASSISTANT], entonces NO la conoces.\n"
-    "3. Si falta información, DELEGA usando el comando:  DELEGAR_A_AGENTE: ... | INPUT: ...\n"
-    "4. Solo cuando TODAS las partes de la pregunta del usuario tengan una respuesta de un [ASSISTANT], redacta la respuesta final combinándolas.\n"
-    "5. Puedes usar como base de conocimiento las respuestas de [ASSISTANT] para volver a usar uno de los agentes\n\n"
+    "1. Tienes PROHIBIDO responder preguntas tú mismo.\n"#, sólo puedes contestar si los [ASSISTANT] han respondido todo para formular la respuesta final o para decir que no encontraste cómo resolver alguna pregunta del usuario.\n"
+    "2. Si la información no viene de un mensaje [ASSISTANT], entonces NO la conoces.\n"#, NO GENERES o CALCULES la respuesta que puede generar un agente disponible.\n"
+    "3. Si falta información que puede ser resuelta por un agente, DELEGA usando el comando:  DELEGAR_A_AGENTE: ... | INPUT: ...\n"
+    "4. Solo cuando TODAS las partes de la pregunta del [USER] tengan una respuesta obtenida de un [ASSISTANT], redacta la respuesta final.\n"
+    "5. Prioriza usar los agentes que tienes disponibles para resolver la pregunta. Las respuestas o combinación de respuestas de [ASSISTANT] pueden ser el input para un agente que tengas disponible.\n"
+    "6. Puedes usar como base de conocimiento las respuestas de [ASSISTANT] para volver a usar uno de los agentes\n\n"
     "¡NO INVENTES RESPUESTAS! Si no ves un mensaje [ASSISTANT] con el dato."
 ),
     max_iterations=5
@@ -78,7 +79,8 @@ response = supervisor.invoke({
     "messages": [{
         "role": "user", 
         #"content": "¿Cuánto es 1543 multiplicado por 2.5 y cuando nació albert einstein?"
-        "content": "¿En que año nació albert einstein? el resultado del año multiplicalo por 10"
+        #"content": "¿En que año nació albert einstein? el resultado del año multiplicalo por 10"
+        "content": "Cuanto es 15 por 25? luego el resultado multiplicalo por el dia en que nació albert einstein"
     }]
 })
 
